@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<link rel="stylesheet" href="tokens.css">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{width:360px;font-family:var(--font-body);font-size:12px;background:var(--bg);color:var(--tx2);padding:16px}
+.header{display:flex;align-items:center;gap:10px;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid var(--brd)}
+.header .logo{width:28px;height:28px;background:var(--red);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0}
+.header h1{font-size:14px;font-weight:600;letter-spacing:-0.3px}
+.header .ver{font-size:10px;color:var(--mut);margin-left:auto}
+.toggle-wrap{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;margin-bottom:14px;background:var(--bg2);border:1px solid var(--brd);border-radius:var(--radius)}
+.toggle-wrap .label{font-size:12px;font-weight:600}
+.status-text{font-size:10px;margin-left:4px}
+.status-text.on{color:var(--green)} .status-text.off{color:var(--mut)}
+.toggle{position:relative;width:44px;height:24px;flex-shrink:0}
+.toggle input{opacity:0;width:0;height:0}
+.toggle .slider{position:absolute;inset:0;background:var(--cardh);border-radius:24px;border:1px solid var(--brd);cursor:pointer;transition:all .2s}
+.toggle .slider::before{content:'';position:absolute;width:18px;height:18px;left:2px;bottom:2px;background:var(--mut);border-radius:50%;transition:all .2s}
+.toggle input:checked+.slider{background:var(--red);border-color:var(--red)}
+.toggle input:checked+.slider::before{transform:translateX(20px);background:#fff}
+.section{margin-bottom:14px}
+.section-title{font-size:10px;color:var(--mut);margin-bottom:8px;letter-spacing:.5px}
+label{display:block;font-size:11px;color:var(--mut);margin-bottom:4px}
+select,input[type=text],input[type=password]{width:100%;padding:7px 10px;background:var(--bg2);border:1px solid var(--brd);border-radius:var(--radius);color:var(--tx2);font-family:inherit;font-size:12px;outline:none;margin-bottom:8px}
+select:focus,input:focus{border-color:var(--red)}
+.key-row{display:flex;gap:6px} .key-row input{flex:1;margin-bottom:0}
+.key-row button{padding:0 10px;background:var(--cardh);border:1px solid var(--brd);border-radius:var(--radius);color:var(--mut);cursor:pointer;font-size:12px}
+.actions{display:flex;flex-direction:column;gap:6px}
+.btn{display:flex;align-items:center;gap:8px;padding:10px 12px;border:1px solid var(--brd);border-radius:var(--radius);background:var(--bg2);color:var(--tx2);cursor:pointer;font-family:inherit;font-size:12px;text-align:left;transition:border-color .15s}
+.btn:hover{border-color:var(--red)}
+.btn .icon{font-size:15px} .btn .label{flex:1} .btn .sub{font-size:10px;color:var(--mut)}
+.btn-primary{background:var(--red);border-color:var(--red);font-weight:600}
+.btn-primary:hover{opacity:.9}
+.stats{display:flex;gap:4px;margin-bottom:14px}
+.stat{flex:1;text-align:center;padding:6px 4px;border-radius:var(--radius);background:var(--bg2);font-size:9px;color:var(--mut)}
+.stat .n{display:block;font-size:14px;font-weight:700;margin-bottom:2px}
+.stat .n.c1{color:var(--red)} .stat .n.c2{color:var(--yellow)} .stat .n.c3{color:var(--blue)} .stat .n.c4{color:var(--purple)}
+.status{margin-top:12px;padding:8px 10px;border-radius:var(--radius);font-size:11px;display:none}
+.status.ok{display:block;background:#0d1f0d;border:1px solid #1a4a1a;color:var(--green)}
+.status.err{display:block;background:#1f0d0d;border:1px solid #4a1a1a;color:var(--red)}
+.footer{margin-top:14px;padding-top:10px;border-top:1px solid var(--brd);font-size:10px;color:var(--mut);text-align:center}
+.onboarding{padding:16px;line-height:1.6}
+.onboarding h2{font-size:16px;margin-bottom:10px;color:var(--red)}
+.onboarding p{font-size:12px;color:var(--tx2);margin-bottom:12px}
+.onboarding ol{font-size:12px;color:var(--mut);padding-left:20px;margin-bottom:12px}
+.onboarding li{margin-bottom:6px}
+.onboarding a{color:var(--blue);text-decoration:none}
+.onboarding .btn-row{display:flex;gap:8px;margin-top:14px}
+</style>
+</head>
+<body>
+<div id="onboarding" style="display:none" class="onboarding">
+  <h2>Welcome to YANSII</h2>
+  <p>A passive security scanner that inspects the pages you browse and points out potential issues to verify by hand. For authorized security testing only.</p>
+  <ol>
+    <li><strong>Set your target scope</strong> below to limit scanning to authorized domains</li>
+    <li><strong>Browse any website</strong> — scanners run automatically in the background</li>
+    <li><strong>Check the Dashboard</strong> for findings grouped by domain and severity</li>
+  </ol>
+  <p style="font-size:11px;color:var(--mut)">Optional: Add an AI API key for deeper analysis. Scanners work without AI.</p>
+  <div class="btn-row">
+    <button class="btn btn-primary" id="onboardingDone" style="flex:1;justify-content:center"><span class="label">Get Started</span></button>
+  </div>
+</div>
+<div id="mainUI">
+<div class="header"><div class="logo">⌖</div><h1>YANSII</h1><span class="ver">v2.2.0</span><span id="buildStamp" title="Build type and id — use this to confirm you loaded the current build" style="font-size:9px;color:var(--mut);margin-left:6px"></span><button id="diagBtn" title="Open Diagnostics: self-check + runtime errors" style="margin-left:auto;background:transparent;border:1px solid var(--brd,#30363d);color:var(--mut);border-radius:5px;font-size:10px;padding:2px 7px;cursor:pointer">🩺 Diagnostics</button></div>
+<div style="color:var(--mut);font-size:10px;margin:-4px 0 6px 0;letter-spacing:0.3px">AI Security Inspector</div>
+
+<div class="toggle-wrap">
+  <div><span class="label">Extension</span><span class="status-text on" id="statusText">Active</span></div>
+  <label class="toggle"><input type="checkbox" id="masterToggle" checked><span class="slider"></span></label>
+</div>
+
+<div class="stats" id="statsBar">
+  <div class="stat"><span class="n c1" id="sVuln">0</span>Vulns</div>
+  <div class="stat"><span class="n c2" id="sPm">0</span>postMsg</div>
+  <div class="stat"><span class="n c3" id="sPages">—</span>Crawled</div>
+  <div class="stat"><span class="n c4" id="sTraffic">0</span>Traffic</div>
+</div>
+
+<div style="background:linear-gradient(135deg,#1a1a2e,#16213e);border:1px solid #0f3460;border-radius:8px;padding:12px 16px;margin:8px 0;text-align:center"><span style="color:#e94560;font-weight:bold;font-size:13px">⚡ Upgrade to YANSII Pro</span><br><span style="color:#a8a8b3;font-size:11px">AI copilot, pattern memory, role comparison, advanced exports &amp; more</span><br><a href="https://yansii.in/pricing" target="_blank" style="display:inline-block;margin-top:8px;background:#e94560;color:white;padding:6px 20px;border-radius:4px;text-decoration:none;font-size:12px;font-weight:bold">Get Pro →</a></div>
+
+
+<div class="section">
+  <div class="section-title">CUSTOM HEADERS</div>
+  <label>Headers for authenticated testing (Name: Value, one per line)</label>
+  <textarea id="customHeaders" rows="3" style="width:100%;padding:7px 10px;background:var(--bg2);border:1px solid var(--brd);border-radius:var(--radius);color:var(--tx2);font-family:inherit;font-size:11px;resize:vertical;margin-bottom:4px" placeholder="Authorization: Bearer eyJ...&#10;X-Custom-Token: abc123&#10;Cookie: session=xyz"></textarea>
+  <div style="display:flex;gap:4px;margin-bottom:6px;flex-wrap:wrap">
+    <button class="btn" id="presetAuth" style="flex:0;padding:4px 8px;font-size:10px">+ Auth Bearer</button>
+    <button class="btn" id="presetCookie" style="flex:0;padding:4px 8px;font-size:10px">+ Cookie</button>
+    <button class="btn" id="presetXFF" style="flex:0;padding:4px 8px;font-size:10px">+ X-Forwarded-For</button>
+    <div style="flex:1"></div>
+    <button class="btn" id="importHeaders" style="flex:0;padding:4px 8px;font-size:10px">Import JSON</button>
+    <button class="btn" id="exportHeaders" style="flex:0;padding:4px 8px;font-size:10px">Export JSON</button>
+  </div>
+  <div class="toggle-wrap" style="margin-bottom:8px;padding:6px 10px">
+    <div><span class="label" style="font-size:11px">Send custom headers</span><span class="status-text" id="headerStatusText" style="font-size:10px;color:var(--mut)">Off</span></div>
+    <label class="toggle"><input type="checkbox" id="headerToggle"><span class="slider"></span></label>
+  </div>
+  <div id="headerBadge" style="font-size:10px;color:var(--mut);margin-bottom:4px"></div>
+  <input type="file" id="headerFileInput" accept=".json" style="display:none">
+</div>
+
+<div class="section">
+  <div class="section-title">TARGET SCOPE <span title="Only scan domains that match your scope. Use wildcards: *.example.com matches all subdomains. Leave empty to scan every site you visit." style="cursor:help;color:var(--mut);font-size:10px">ⓘ</span></div>
+  <p style="font-size:10px;color:var(--mut);margin:0 0 6px">Only scan domains that match. Wildcards: <code>*.example.com</code> matches all subdomains. Empty = scan all.</p>
+  <label>Scope (wildcard domains, one per line)</label>
+  <textarea id="scopeInput" rows="3" style="width:100%;padding:7px 10px;background:var(--bg2);border:1px solid var(--brd);border-radius:var(--radius);color:var(--tx2);font-family:inherit;font-size:11px;resize:vertical;margin-bottom:4px" placeholder="*.example.com&#10;api.target.com&#10;*.target.com"></textarea>
+  <div style="display:flex;gap:6px;margin-bottom:8px">
+    <button class="btn" id="scopeSetBtn" style="flex:1;justify-content:center;padding:6px"><span class="label">Set Scope</span></button>
+    <button class="btn" id="scopeClearBtn" style="flex:1;justify-content:center;padding:6px"><span class="label">Clear</span></button>
+  </div>
+  <div id="scopeStatus" style="font-size:10px;color:var(--mut);margin-bottom:4px"></div>
+  <div class="toggle-wrap" style="margin-bottom:2px;padding:6px 10px" title="When on, YANSII only does passive read-only detection and blocks all active verification (no test requests/payloads sent to external targets). Use it on production or out-of-scope-adjacent sites.">
+    <div><span class="label" style="font-size:11px">Safe Mode</span><span class="status-text" id="safeModeText" style="font-size:10px;color:var(--mut)">Off</span></div>
+    <label class="toggle"><input type="checkbox" id="safeModeToggle"><span class="slider"></span></label>
+  </div>
+  <p style="font-size:10px;color:var(--mut);margin:0 0 6px">Passive-only: blocks active verification requests to external targets. On = read-only detection.</p>
+  <div class="toggle-wrap" style="margin-bottom:2px;padding:6px 10px" title="Pause automatic scanning on every page load. The manual 'Scan Current Page' button still works.">
+    <div><span class="label" style="font-size:11px">Pause Auto-Scan</span><span class="status-text" id="scanPausedText" style="font-size:10px;color:var(--mut)">Off</span></div>
+    <label class="toggle"><input type="checkbox" id="scanPausedToggle"><span class="slider"></span></label>
+  </div>
+  <p style="font-size:10px;color:var(--mut);margin:0 0 6px">When paused, pages are not auto-scanned. Manual scan still works.</p>
+  <div class="toggle-wrap" style="margin-bottom:2px;padding:6px 10px" title="Runs only essential scanners (headers, CORS, info disclosure). Use when you have many tabs open — reduces CPU per page.">
+    <div><span class="label" style="font-size:11px">⚡ Lightweight Mode</span><span class="status-text" id="lightweightText" style="font-size:10px;color:var(--mut)">Off</span></div>
+    <label class="toggle"><input type="checkbox" id="lightweightToggle"><span class="slider"></span></label>
+  </div>
+  <p style="font-size:10px;color:var(--mut);margin:0 0 6px">Essential scanners only — for when you run many tabs.</p>
+  <label style="margin-top:4px">Max requests/sec <span title="Caps how fast YANSII sends requests during crawling and active validation. Stay within the program's rate limit." style="cursor:help;color:var(--mut);font-size:10px">ⓘ</span></label>
+  <input type="number" id="maxRpsInput" min="1" max="50" step="1" value="5" style="width:70px">
+  <p style="font-size:10px;color:var(--mut);margin:2px 0 6px">Applies to the crawler + active validation (whichever limit is stricter wins).</p>
+</div>
+
+
+<div class="section">
+  <div class="section-title">ACTIONS</div>
+  <div class="actions">
+    <button class="btn btn-primary" id="scanBtn" title="Run automated security scanners on the current page"><span class="icon">⌖</span><span><span class="label">Scan Current Page</span><br><span class="sub">Security scanners + postMessage analysis</span></span></button>
+    <button class="btn" id="xssProbeBtn" style="border-color:var(--yellow);color:var(--yellow)" title="Inject XSS test payloads into all input fields on the page"><span class="icon">🎯</span><span><span class="label">XSS Probe</span><br><span class="sub">Fill all inputs with XSS test payload</span></span></button>
+    <button class="btn" id="crawlBtn" title="Crawl the current site and scan all discovered pages"><span class="icon">⥁</span><span><span class="label">Auto Crawl + Test</span><br><span class="sub">Crawl site & test all pages in parallel</span></span></button>
+    <button class="btn" id="panelBtn" title="Open the side panel with scan results, AI analysis, and crawl controls"><span class="icon">◫</span><span><span class="label">Open Side Panel</span><br><span class="sub">Full dashboard · postMessage · AI · Crawl</span></span></button>
+    <button class="btn" id="dashBtn" title="Open the full dashboard with findings across all domains"><span class="icon">▦</span><span><span class="label">Open Dashboard</span><br><span class="sub">Global findings · All domains · Export</span></span></button>
+  </div>
+</div>
+
+
+<div id="status" class="status"></div>
+<div id="statusIndicator" style="font-size:10px;text-align:center;padding:4px 8px;color:var(--mut)"></div>
+<div id="perfStats" style="font-size:10px;color:var(--mut);text-align:center;padding:2px 0"></div>
+<div class="popup-footer" style="font-size:10px;color:var(--mut);text-align:center;padding:6px 0;border-top:1px solid var(--brd,#30363d);margin-top:6px">
+  <a href="https://yansii.in" target="_blank" style="color:#58a6ff;text-decoration:none">Website</a> ·
+  <a href="mailto:hello@yansii.in" style="color:#58a6ff;text-decoration:none">Support</a> ·
+  <a href="https://yansii.in/privacy" target="_blank" style="color:#58a6ff;text-decoration:none">Privacy</a>
+  <div style="margin-top:3px;color:var(--dim,#6e7681)">YANSII v2.2.0 · <a href="https://github.com/Yansii-dev/yansii/issues" target="_blank" style="color:#58a6ff;text-decoration:none">Report Bug</a></div>
+  <details style="margin-top:5px;text-align:left">
+    <summary style="cursor:pointer;color:var(--dim,#6e7681);font-size:9px;text-align:center;list-style:none">✓ Verify this is official YANSII</summary>
+    <div style="margin-top:4px;padding:6px;background:var(--bg2,#161b22);border:1px solid var(--brd,#30363d);border-radius:5px;font-size:9px;line-height:1.5;color:var(--mut)">
+      Official YANSII comes <b>only</b> from:<br>
+      · Chrome Web Store — <a href="https://yansii.in/download" target="_blank" style="color:#58a6ff;text-decoration:none">yansii.in/download</a><br>
+      · GitHub — <a href="https://github.com/Yansii-dev/yansii" target="_blank" style="color:#58a6ff;text-decoration:none">github.com/Yansii-dev/yansii</a><br>
+      Extension ID: <code id="extIdShow" style="color:var(--fg,#c9d1d9)">—</code><br>
+      Build: <code id="buildIdShow" style="color:var(--fg,#c9d1d9)">—</code><br>
+      <span style="color:var(--orange,#d29922)">If you got YANSII anywhere else, it may be compromised — remove it.</span>
+    </div>
+  </details>
+</div>
+<div class="footer">Use YANSII only on applications you own or have explicit authorization to test. Unauthorized testing may violate computer fraud laws.</div>
+</div>
+<script src="popup.js"></script>
+</body>
+</html>

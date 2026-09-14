@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><title>YANSII — Dashboard</title><link rel="stylesheet" href="tokens.css">
+<style>
+/* tokens.css provides :root variables and base reset */
+body { font-family:var(--font-body); font-size:13px; background:var(--bg); color:var(--tx2); min-height:100vh; }
+.page { max-width:1100px; margin:0 auto; padding:32px 24px 60px; }
+.header { margin-bottom:28px; }
+.header h1 { font-family:var(--font-mono); font-size:20px; font-weight:700; color:var(--tx2); letter-spacing:-0.3px; }
+.header h1 span { color:var(--red); }
+.header .sub { color:var(--mut); font-size:12px; margin-top:4px; }
+.stats { display:grid; grid-template-columns:repeat(8,1fr); gap:10px; margin-bottom:24px; }
+.stat { padding:16px; background:var(--bg2); border:1px solid var(--brd); border-radius:var(--radius); text-align:center; }
+.stat .n { font-family:var(--font-mono); font-size:26px; font-weight:700; display:block; line-height:1.2; }
+.stat .label { font-size:10px; color:var(--mut); text-transform:uppercase; letter-spacing:0.8px; margin-top:4px; }
+.n.crit { color:var(--red); } .n.high { color:var(--orange); } .n.med { color:var(--yellow); }
+.n.low { color:var(--blue); } .n.confirmed { color:var(--green); } .n.pm { color:var(--purple); }
+.toolbar { display:flex; gap:8px; margin-bottom:20px; align-items:center; flex-wrap:wrap; }
+.dropdown { position:relative; display:inline-block; }
+.dd-menu { display:none; position:absolute; top:100%; left:0; margin-top:4px; z-index:50; background:var(--card,#161b22); border:1px solid var(--border,#30363d); border-radius:6px; padding:4px; min-width:170px; box-shadow:0 6px 20px rgba(0,0,0,.5); }
+.dropdown.open .dd-menu { display:block; }
+.dd-menu .btn { display:block; width:100%; text-align:left; margin:2px 0; border-color:transparent; }
+.dd-menu .btn:hover { background:var(--bg2,#21262d); }
+.toolbar .search {
+  padding:8px 14px; background:var(--bg2); border:1px solid var(--brd);
+  border-radius:var(--radius); color:var(--tx2); font-family:var(--font-body);
+  font-size:12px; width:280px; outline:none; transition:border-color .15s;
+}
+.toolbar .search:focus { border-color:var(--blue); }
+.toolbar .search::placeholder { color:var(--dim); }
+.spacer { flex:1; }
+.btn {
+  padding:7px 14px; background:var(--bg2); border:1px solid var(--brd);
+  border-radius:var(--radius); color:var(--mut); font-family:var(--font-body);
+  font-size:12px; cursor:pointer; transition:all .15s; white-space:nowrap;
+}
+.btn:hover { border-color:var(--dim); color:var(--tx2); }
+.btn.danger { color:var(--red); }
+.btn.danger:hover { border-color:var(--red); background:#1a0d0d; }
+.filters { display:flex; gap:6px; margin-bottom:20px; flex-wrap:wrap; }
+.pill {
+  padding:5px 12px; background:var(--bg2); border:1px solid var(--brd);
+  border-radius:20px; color:var(--mut); font-size:11px; cursor:pointer;
+  transition:all .15s; user-select:none;
+}
+.pill:hover { color:var(--tx2); border-color:var(--dim); }
+.pill.active { border-color:var(--red); color:var(--red); background:#1a0d0d; }
+.confirmed-section { margin-bottom:24px; }
+.confirmed-section.hidden { display:none; }
+.section-label {
+  font-family:var(--font-mono); font-size:12px; font-weight:600; color:var(--mut);
+  text-transform:uppercase; letter-spacing:0.5px; margin-bottom:10px;
+  display:flex; align-items:center; gap:8px;
+}
+.section-label .count-badge { padding:2px 8px; border-radius:10px; font-size:10px; font-weight:700; }
+.confirmed-card {
+  padding:14px 16px; background:#0a1a0a; border:1px solid #183818;
+  border-radius:var(--radius); margin-bottom:8px; display:flex; align-items:center; gap:12px;
+}
+.confirmed-card .info { flex:1; }
+.confirmed-card .title { color:var(--green); font-weight:600; font-size:13px; }
+.confirmed-card .meta { color:var(--mut); font-size:11px; margin-top:3px; }
+.confirmed-card .btn { font-size:11px; padding:5px 10px; }
+.domain-group { border:1px solid var(--brd); border-radius:var(--radius); margin-bottom:10px; overflow:hidden; }
+.domain-header {
+  display:flex; align-items:center; gap:10px; padding:12px 16px;
+  background:var(--bg2); cursor:pointer; user-select:none; transition:background .1s;
+}
+.domain-header:hover { background:var(--cardh); }
+.domain-header .arrow { color:var(--dim); font-size:10px; transition:transform .2s; flex-shrink:0; width:12px; }
+.domain-header.open .arrow { transform:rotate(90deg); }
+.domain-header .domain-name { font-family:var(--font-mono); font-weight:600; font-size:13px; flex:1; }
+.domain-header .domain-stats { font-size:11px; color:var(--mut); display:flex; gap:8px; }
+.domain-header .domain-stats .s-crit { color:var(--red); font-weight:600; }
+.domain-header .domain-stats .s-high { color:var(--orange); font-weight:600; }
+.domain-body { display:none; }
+.domain-body.open { display:block; }
+.finding-row {
+  display:flex; align-items:center; gap:10px; padding:10px 16px;
+  border-top:1px solid var(--brd); font-size:12px; cursor:pointer; transition:background .1s;
+}
+.finding-row:hover { background:var(--bg2); }
+.finding-row.crit-row { border-left:3px solid var(--red); background:rgba(229,68,58,0.04); }
+.sev {
+  font-family:var(--font-mono); font-size:9px; font-weight:700; padding:3px 7px;
+  border-radius:4px; text-transform:uppercase; letter-spacing:0.3px; flex-shrink:0;
+}
+.sev.critical { background:#2d0a0c; color:var(--red); }
+.sev.high { background:#2d1a0a; color:var(--orange); }
+.sev.medium { background:#2d260a; color:var(--yellow); }
+.sev.low { background:#0a1a3d; color:var(--blue); }
+.sev.info { background:var(--cardh); color:var(--mut); }
+.finding-row .type { font-weight:600; flex:1; }
+.finding-row .url { color:var(--mut); font-family:var(--font-mono); font-size:10px; max-width:260px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.finding-row .score { color:var(--purple); font-family:var(--font-mono); font-size:10px; flex-shrink:0; }
+.finding-row .time { color:var(--dim); font-size:10px; flex-shrink:0; }
+.row-actions { display:flex; gap:4px; flex-shrink:0; }
+.row-btn {
+  padding:3px 8px; border:1px solid var(--brd); border-radius:4px;
+  background:none; color:var(--mut); font-family:var(--font-mono); font-size:9px;
+  cursor:pointer; transition:all .15s;
+}
+.row-btn:hover { border-color:var(--purple); color:var(--purple); }
+.pm-row {
+  display:flex; align-items:center; gap:10px; padding:8px 16px;
+  border-top:1px solid var(--brd); font-size:11px; color:var(--mut);
+}
+.pm-row .pm-tag { font-size:9px; padding:2px 6px; border-radius:3px; background:#1a1a3d; color:var(--purple); font-weight:600; }
+.modal-overlay {
+  display:none; position:fixed; inset:0; background:rgba(0,0,0,.6);
+  z-index:100; justify-content:center; align-items:center; backdrop-filter:blur(4px);
+}
+.modal-overlay.open { display:flex; }
+.modal {
+  background:var(--bg); border:1px solid var(--brd); border-radius:12px;
+  width:680px; max-height:82vh; overflow-y:auto; padding:28px;
+  box-shadow:0 20px 60px rgba(0,0,0,.5);
+}
+.modal h2 { font-family:var(--font-mono); font-size:16px; font-weight:700; margin-bottom:16px; }
+.modal .field { margin-bottom:12px; }
+.modal .field-label { color:var(--dim); font-size:10px; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:3px; }
+.modal .field-value { color:var(--tx2); font-size:13px; line-height:1.5; word-break:break-word; }
+.modal pre {
+  background:var(--bg2); padding:12px; border-radius:var(--radius);
+  font-family:var(--font-mono); font-size:11px; line-height:1.5;
+  overflow-x:auto; max-height:200px; color:var(--mut); white-space:pre-wrap;
+}
+.modal .btn-row { display:flex; gap:8px; margin-top:20px; flex-wrap:wrap; }
+.btn.primary { background:var(--red); border-color:var(--red); color:#fff; }
+.btn.primary:hover { opacity:.9; }
+.btn.purple { border-color:var(--purple); color:var(--purple); }
+.btn.purple:hover { background:#1a1a30; }
+.btn.green { border-color:var(--green); color:var(--green); }
+.btn.green:hover { background:#0a1a0a; }
+.ai-result { margin-top:16px; padding:14px; background:var(--bg2); border:1px solid var(--brd); border-radius:var(--radius); }
+.ai-result .ai-label { color:var(--purple); font-weight:700; font-size:12px; margin-bottom:8px; }
+.ai-result pre { background:var(--cardh); max-height:300px; }
+.empty { text-align:center; padding:60px 20px; color:var(--dim); }
+.empty .icon { font-size:40px; margin-bottom:12px; opacity:.3; }
+.empty p { font-size:12px; line-height:1.6; }
+.vstatus {
+  font-family:var(--font-mono); font-size:8px; font-weight:700; padding:2px 5px;
+  border-radius:3px; text-transform:uppercase; letter-spacing:0.3px; flex-shrink:0;
+}
+.vstatus.detected { background:var(--cardh); color:var(--dim); }
+.vstatus.verified { background:#0a2a0a; color:var(--green); }
+.vstatus.likely { background:#2a2a0a; color:var(--yellow); }
+.vstatus.filtered { background:#2a1a0a; color:var(--orange); }
+.vstatus.false_positive { background:#0a0a2a; color:var(--blue); text-decoration:line-through; }
+.row-btn.verify { border-color:var(--green); color:var(--green); }
+.row-btn.verify:hover { background:#0a1a0a; }
+.scope-bar {
+  display:flex; gap:8px; margin-bottom:12px; align-items:center; flex-wrap:wrap;
+  padding:8px 14px; background:var(--bg2); border:1px solid var(--brd); border-radius:var(--radius);
+}
+.scope-bar label { font-size:11px; color:var(--mut); }
+.scope-bar input[type="text"] {
+  padding:5px 10px; background:var(--bg); border:1px solid var(--brd);
+  border-radius:4px; color:var(--tx2); font-family:var(--font-mono); font-size:11px; width:240px;
+}
+.scope-bar .toggle-wrap { display:flex; align-items:center; gap:4px; }
+.scope-bar .toggle-wrap input { accent-color:var(--red); }
+.verify-result { margin-top:12px; padding:10px; background:var(--bg2); border:1px solid var(--brd); border-radius:var(--radius); font-size:12px; }
+.verify-result .vr-status { font-weight:700; font-family:var(--font-mono); }
+.verify-result .vr-status.verified { color:var(--green); }
+.verify-result .vr-status.likely { color:var(--yellow); }
+.verify-result .vr-status.filtered { color:var(--orange); }
+.verify-result .vr-status.false_positive { color:var(--blue); }
+.verify-result .vr-status.error, .verify-result .vr-status.blocked { color:var(--red); }
+/* scrollbar handled by tokens.css */
+@media (max-width:800px) {
+  .stats { grid-template-columns:repeat(4,1fr); }
+  .finding-row .url { display:none; }
+}
+.gql-endpoint { padding:10px; background:var(--bg); border:1px solid var(--brd); border-radius:var(--radius); margin-bottom:8px; }
+.gql-endpoint .url { font-family:var(--font-mono); font-size:12px; color:var(--blue); word-break:break-all; }
+.gql-endpoint .meta { font-size:11px; color:var(--mut); margin-top:4px; }
+.gql-badge { display:inline-block; padding:2px 8px; border-radius:10px; font-size:10px; font-weight:600; }
+.gql-badge.enabled { background:#0a2a0a; color:var(--green); border:1px solid var(--green); }
+.gql-badge.disabled { background:#1a1a1a; color:var(--dim); border:1px solid var(--dim); }
+.gql-badge.partial { background:#1a1a0a; color:var(--yellow); border:1px solid var(--yellow); }
+.gql-badge.error { background:#1a0d0d; color:var(--red); border:1px solid var(--red); }
+.auth-matrix { width:100%; border-collapse:collapse; font-size:12px; margin-top:12px; }
+.auth-matrix th { text-align:left; padding:6px 10px; background:var(--bg); border-bottom:1px solid var(--brd); color:var(--mut); font-size:10px; text-transform:uppercase; letter-spacing:0.5px; }
+.auth-matrix td { padding:6px 10px; border-bottom:1px solid var(--brd); }
+.auth-matrix tr.accessible td { background:#1a0d0d; }
+.auth-matrix tr.protected td { background:#0a1a0a; }
+.auth-matrix .field-name { font-family:var(--font-mono); color:var(--tx2); }
+.auth-matrix .status-yes { color:var(--red); font-weight:600; }
+.auth-matrix .status-no { color:var(--green); }
+.auth-matrix .status-partial { color:var(--yellow); }
+.schema-tree { font-family:var(--font-mono); font-size:11px; line-height:1.6; max-height:400px; overflow-y:auto; padding:10px; background:var(--bg); border:1px solid var(--brd); border-radius:var(--radius); }
+.schema-tree .type-name { color:var(--blue); cursor:pointer; }
+.schema-tree .type-name:hover { text-decoration:underline; }
+.schema-tree .field { padding-left:16px; color:var(--tx2); }
+.schema-tree .field .arg { color:var(--mut); }
+.schema-tree .field .ftype { color:var(--yellow); }
+.schema-tree .mutation-field { color:var(--red); }
+.schema-tree .query-field { color:var(--green); }
+.gql-tabs { display:flex; gap:0; margin-bottom:12px; border-bottom:1px solid var(--brd); }
+.gql-tab { padding:8px 16px; font-size:12px; color:var(--mut); cursor:pointer; border-bottom:2px solid transparent; }
+.gql-tab:hover { color:var(--tx2); }
+.gql-tab.active { color:var(--purple); border-bottom-color:var(--purple); }
+.gql-panel { display:none; }
+.gql-panel.active { display:block; }
+.fade-in { animation: fadeIn 200ms ease; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+.btn { transition: all .15s, transform .1s; }
+.btn:hover { transform: translateY(-1px); box-shadow: 0 2px 8px rgba(0,0,0,0.3); }
+@keyframes pulse-crit { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
+.n.crit { animation: pulse-crit 2s ease infinite; }
+.modal-overlay { transition: opacity .15s; }
+.modal { animation: slideUp 150ms ease; }
+@keyframes slideUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+.domain-body { transition: max-height .2s ease; }
+.finding-row { animation: fadeIn 200ms ease; }
+/* toast styles handled by tokens.css */
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="header">
+    <h1><span>⌖</span> YANSII</h1>
+    <div class="sub">Your Adaptive Next-Step Intelligent Inspector</div>
+  </div>
+  <div class="stats">
+    <div class="stat"><span class="n crit" id="sDomains">0</span><span class="label">Domains</span></div>
+    <div class="stat"><span class="n high" id="sFindings">0</span><span class="label">Findings</span></div>
+    <div class="stat"><span class="n med" id="sCritical">0</span><span class="label">Critical</span></div>
+    <div class="stat"><span class="n low" id="sHigh">0</span><span class="label">High</span></div>
+    <div class="stat"><span class="n confirmed" id="sConfirmed">0</span><span class="label">Confirmed</span></div>
+    <div class="stat"><span class="n pm" id="sPm">0</span><span class="label">postMsg</span></div>
+  </div>
+  <div class="toolbar" id="mainToolbar">
+    <input type="text" class="search" id="searchBox" placeholder="Search domains, findings…">
+    <div class="spacer"></div>
+    <!-- Row 1: primary (always visible) -->
+    <!-- Row 2: grouped dropdowns -->
+    <div class="dropdown"><button class="btn dd-toggle" style="border-color:#3fb950;color:#3fb950">🧠 Intelligence ▾</button><div class="dd-menu">
+    </div></div>
+    <div class="dropdown"><button class="btn dd-toggle" style="border-color:#58a6ff;color:#58a6ff">🧪 Testing ▾</button><div class="dd-menu">
+      <button class="btn" id="btnApiTraffic">📡 API Traffic</button>
+    </div></div>
+    <div class="dropdown"><button class="btn dd-toggle">⬇ Export ▾</button><div class="dd-menu">
+      <button class="btn" id="btnExportAll">↓ JSON</button>
+    </div></div>
+    <div class="dropdown"><button class="btn dd-toggle">⋯ More ▾</button><div class="dd-menu">
+      <button class="btn" id="btnRules">📝 Rules</button>
+      <button class="btn" id="btnWordlists">📝 Wordlists</button>
+      <button class="btn" id="btnActivityLog">📋 Activity Log <span id="logBadge" style="display:none;background:#e8403a;color:#fff;border-radius:8px;padding:0 5px;font-size:9px;margin-left:2px">0</span></button>
+      <button class="btn" id="btnUnconfirmed">📦 Unconfirmed</button>
+      <button class="btn danger" id="btnClear">✕ Clear All</button>
+    </div></div>
+  </div>
+  <div class="scope-bar" id="scopeBar">
+    <span id="scopeStatus" style="font-size:9px;padding:2px 6px;border-radius:3px;background:#2d0a0c;color:var(--red);font-weight:700;letter-spacing:0.3px">NO SCOPE</span>
+    <label>Target Scope:</label>
+    <input type="text" id="scopeInput" placeholder="*.example.com, api.target.com" style="width:360px">
+    <button class="btn green" id="btnSaveScope" style="font-size:11px;padding:5px 10px;">Save Scope</button>
+    <button class="btn" id="btnClearScope" style="font-size:11px;padding:5px 10px;color:var(--dim)">Clear</button>
+    <div class="spacer"></div>
+    <div class="toggle-wrap">
+      <input type="checkbox" id="safeModeToggle">
+      <label for="safeModeToggle" style="cursor:pointer">Safe Mode (passive only)</label>
+    </div>
+    <button class="btn green" id="btnVerifyAll" style="font-size:11px;padding:5px 10px;">⚡ Verify All High/Crit</button>
+    <div class="toggle-wrap" style="margin-left:8px">
+      <span class="vstatus detected" id="verifyStats" style="font-size:9px;">0 verified</span>
+    </div>
+    <span id="headersBadge" style="font-size:9px;padding:2px 6px;border-radius:3px;background:#1a2a1a;color:var(--green);font-weight:600;display:none"></span>
+  </div>
+  <div class="filters" id="filterBar">
+    <div class="pill active" data-sev="all">All</div>
+    <div class="pill" data-sev="critical">Critical</div>
+    <div class="pill" data-sev="high">High</div>
+    <div class="pill" data-sev="medium">Medium</div>
+    <div class="pill" data-sev="low">Low</div>
+    <div class="pill" data-sev="info">Info</div>
+    <div style="flex:1"></div>
+    <label class="pill" id="lowConfToggle" style="cursor:pointer" title="Three-tier system: Observed = directly observable fact, e.g. a missing header (real at its severity, not a confirmed exploit). Review = active test suggests it may be real. Potential = passive pattern match only (may be false positives). Potential findings are hidden by default."><input type="checkbox" id="showLowConf" style="vertical-align:middle;margin-right:4px">Show potential <span id="potentialCount"></span> <span style="color:var(--mut,#8b949e);cursor:help">ⓘ</span></label>
+  </div>
+  <div class="confirmed-section hidden" id="confirmedSection">
+    <div class="section-label">Confirmed Bugs <span class="count-badge" style="background:#0a1a0a;color:var(--green)" id="confirmedCount">0</span></div>
+    <div id="confirmedList"></div>
+  </div>
+  <div>
+    <div class="section-label">Findings by Domain <span class="count-badge" style="background:var(--cardh);color:var(--mut)" id="domainCount">0</span></div>
+    <div id="domainList"></div>
+  </div>
+</div>
+<div class="modal-overlay" id="detailModal">
+  <div class="modal" id="detailBox"></div>
+</div>
+<div class="ethical-banner">Use YANSII only on applications you own or have explicit authorization to test. Unauthorized testing may violate computer fraud laws.</div>
+<script src="tier-display.js"></script>
+<script src="dashboard.js"></script>
+</body>
+</html>
