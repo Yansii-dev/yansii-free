@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8"><link rel="stylesheet" href="tokens.css"><link rel="stylesheet" href="sidepanel.css"></head>
+<body>
+<nav class="tabs">
+  <button class="tab active" data-tab="scan">⌖ Scan</button>
+  <button class="tab" data-tab="crawl">⥁ Crawl</button>
+</nav>
+
+<!-- ═══ SCAN TAB (merged: scanners + postMessage) ═══ -->
+<div class="panel active" id="panel-scan">
+  <div class="toolbar">
+    <button class="tool-btn" id="runScan">▶ Scan Page</button>
+    <button class="tool-btn" id="exportBtn">↓ Export</button>
+    <div class="spacer"></div>
+    <span class="scan-time" id="scanTime"></span>
+  </div>
+  <div id="scanSummary" class="summary hidden">
+    <div class="summary-item crit"><span class="count" id="cCrit">0</span>Critical</div>
+    <div class="summary-item high"><span class="count" id="cHigh">0</span>High</div>
+    <div class="summary-item med"><span class="count" id="cMed">0</span>Medium</div>
+    <div class="summary-item low"><span class="count" id="cLow">0</span>Low</div>
+    <div class="summary-item info"><span class="count" id="cInfo">0</span>Info</div>
+  </div>
+  <div class="filter-bar" id="filterBar">
+    <button class="filter active" data-sev="all">All</button>
+    <button class="filter" data-sev="critical">Crit</button>
+    <button class="filter" data-sev="high">High</button>
+    <button class="filter" data-sev="medium">Med</button>
+    <button class="filter" data-sev="low">Low</button>
+    <button class="filter" data-sev="info">Info</button>
+  </div>
+  <div id="findings" class="findings">
+    <div class="empty-state"><div class="empty-icon">⌖</div><p>Click <strong>Scan Page</strong> to run security scanners.</p></div>
+  </div>
+
+  <!-- postMessage section — collapsible inside Scan tab -->
+  <div class="collapsible-header" id="pmToggle">
+    <span class="collapse-arrow" id="pmArrow">▸</span>
+    <span>postMessage Handlers</span>
+    <span class="scan-time" id="pmCount" style="margin-left:auto">0</span>
+  </div>
+  <div class="collapsible-body hidden" id="pmSection">
+    <div class="toolbar" style="border-top:none">
+      <button class="tool-btn" id="pmRefresh">⟳ Refresh</button>
+      <button class="tool-btn" id="pmTraffic">Traffic</button>
+    </div>
+    <div id="pmFindings" class="findings" style="max-height:300px">
+      <div class="empty-state"><p style="font-size:11px">postMessage handlers appear as pages load.</p></div>
+    </div>
+  </div>
+
+  <!-- Notes — collapsible inside Scan tab -->
+  <div class="collapsible-header" id="notesToggle">
+    <span class="collapse-arrow" id="notesArrow">▸</span>
+    <span>Notes</span>
+  </div>
+  <div class="collapsible-body hidden" id="notesSection">
+    <div style="display:flex;gap:4px;padding:4px 8px">
+      <button class="tool-btn" id="clearNotes" style="font-size:10px;padding:3px 8px">Clear</button>
+      <button class="tool-btn" id="copyNotes" style="font-size:10px;padding:3px 8px">Copy</button>
+    </div>
+    <textarea id="notesArea" class="notes-area" placeholder="PoC steps, notes…" style="height:120px"></textarea>
+  </div>
+
+  <!-- Activity (last 10 for this domain) — collapsible inside Scan tab, collapsed by default -->
+  <div class="collapsible-header" id="activityToggle">
+    <span class="collapse-arrow" id="activityArrow">▸</span>
+    <span>Activity (last 10)</span>
+  </div>
+  <div class="collapsible-body hidden" id="activitySection">
+    <div id="activityLog" style="font-family:var(--mono,monospace);font-size:10px;padding:4px 8px;max-height:180px;overflow:auto;color:var(--mut,#8b949e)"></div>
+  </div>
+</div>
+
+<!-- ═══ CRAWL TAB ═══ -->
+<div class="panel" id="panel-crawl">
+  <div class="crawl-config">
+    <div class="config-row"><label>Scope</label><select id="crawlScope"><option value="subdomain">Same subdomain</option><option value="domain">Same root domain</option><option value="custom">Custom regex</option></select></div>
+    <div class="config-row" id="customScopeRow" style="display:none"><label>Scope regex</label><input type="text" id="crawlScopeRegex" placeholder="^https://example\.com/app/.*"></div>
+    <div class="config-row two-col">
+      <div><label>Speed</label><select id="crawlSpeed"><option value="3000">Stealth</option><option value="1500" selected>Slow</option><option value="800">Normal</option><option value="300">Fast</option></select></div>
+      <div><label>Depth</label><input type="number" id="crawlDepth" min="1" max="20" value="5" step="1" title="How many links deep to crawl (1-20)" style="width:60px"></div>
+    </div>
+    <div class="config-row two-col">
+      <div><label>Max pages</label><select id="crawlMaxPages"><option value="25">25</option><option value="50" selected>50</option><option value="100">100</option><option value="250">250</option></select></div>
+      <div><label>Auth</label><select id="crawlAuth"><option value="auth">Auth</option><option value="noauth">NoAuth</option><option value="both">Both</option></select></div>
+    </div>
+  </div>
+  <div class="crawl-actions">
+    <button class="btn btn-primary" id="startCrawl">⥁ Start Crawl</button>
+    <button class="btn" id="pauseCrawl" style="display:none">⏸ Pause</button>
+    <button class="btn" id="stopCrawl" style="display:none">⏹ Stop</button>
+    <button class="btn" id="exportCrawl" style="display:none">↓ Export</button>
+  </div>
+  <div class="crawl-progress hidden" id="crawlProgress">
+    <div class="progress-bar-wrap"><div class="progress-bar" id="crawlBar" style="width:0%"></div></div>
+    <div class="progress-stats">
+      <span>Pages: <strong id="crawlPageCount">0</strong>/<strong id="crawlPageMax">50</strong></span>
+      <span>Queue: <strong id="crawlQueueCount">0</strong></span>
+      <span>Findings: <strong id="crawlFindingCount">0</strong></span>
+      <span id="crawlStatus" class="crawl-status-text">Idle</span>
+    </div>
+  </div>
+  <div class="crawl-log" id="crawlLog">
+    <div class="empty-state"><div class="empty-icon">⥁</div><p>Configure and <strong>Start Crawl</strong>.</p></div>
+  </div>
+</div>
+
+
+<div class="ethical-banner">Use YANSII only on applications you own or have explicit authorization to test. Unauthorized testing may violate computer fraud laws.</div>
+<script src="sidepanel.js"></script>
+</body>
+</html>
