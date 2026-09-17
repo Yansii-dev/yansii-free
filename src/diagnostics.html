@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>YANSII Diagnostics</title>
+<style>
+  :root { --bg:#0d1117; --card:#161b22; --border:#30363d; --fg:#c9d1d9; --mut:#8b949e; --green:#3fb950; --red:#e8403a; --yellow:#d29922; --blue:#58a6ff; }
+  body { margin:0; background:var(--bg); color:var(--fg); font:13px/1.5 system-ui,-apple-system,sans-serif; padding:20px; }
+  h1 { font-size:18px; margin:0 0 4px; }
+  h2 { font-size:13px; text-transform:uppercase; letter-spacing:.05em; color:var(--mut); margin:18px 0 8px; }
+  .stamp { font-size:12px; color:var(--mut); margin-bottom:14px; }
+  .stamp b { color:var(--fg); }
+  .card { background:var(--card); border:1px solid var(--border); border-radius:8px; padding:12px 14px; margin-bottom:10px; }
+  .row { display:flex; justify-content:space-between; gap:10px; padding:3px 0; }
+  .row .k { color:var(--mut); }
+  .ok { color:var(--green); } .bad { color:var(--red); } .warn { color:var(--yellow); }
+  .check { display:flex; align-items:center; gap:8px; padding:4px 0; }
+  .dot { width:9px; height:9px; border-radius:50%; flex:none; }
+  .dot.ok{background:var(--green)} .dot.bad{background:var(--red)} .dot.warn{background:var(--yellow)}
+  button { background:var(--card); color:var(--fg); border:1px solid var(--border); border-radius:6px; padding:6px 12px; cursor:pointer; font-size:12px; }
+  button:hover { border-color:var(--blue); }
+  .err { border-left:3px solid var(--red); padding:6px 10px; margin:6px 0; background:#1a1113; border-radius:4px; font-size:12px; }
+  .err .src { color:var(--yellow); font-weight:600; }
+  .err .msg { color:var(--fg); word-break:break-word; }
+  .err .meta { color:var(--mut); font-size:10px; margin-top:2px; }
+  pre { white-space:pre-wrap; word-break:break-word; color:var(--mut); font-size:10px; margin:4px 0 0; }
+  .muted { color:var(--mut); }
+  .toolbar { display:flex; gap:8px; margin-bottom:6px; }
+</style>
+</head>
+<body>
+  <h1>YANSII Diagnostics</h1>
+  <div class="stamp" id="stamp">Loading build info…</div>
+
+  <h2>Health check</h2>
+  <div class="card" id="checks"><span class="muted">Running…</span></div>
+
+  <h2>State</h2>
+  <div class="card" id="state"><span class="muted">Loading…</span></div>
+
+  <h2>Runtime errors <span id="errCount" class="muted"></span></h2>
+  <div class="toolbar">
+    <button id="refresh">↻ Refresh</button>
+    <button id="clearErrors">✕ Clear errors</button>
+    <button id="copyReport">📋 Copy report</button>
+  </div>
+  <div id="errors"><span class="muted">Loading…</span></div>
+
+  <script src="diagnostics.js"></script>
+</body>
+</html>

@@ -1,0 +1,10 @@
+node_modules/
+*.log
+*.map
+*.bak
+*.swp
+*.zip
+*.tar.gz
+.env
+.DS_Store
+Thumbs.db
